@@ -1,0 +1,14 @@
+node_modules
+.next
+.pnpm-store
+out
+.env
+.env*.local
+next-start.log
+next-start.err
+next-server.pid
+.pnpm-debug.log
+*.tsbuildinfo
+.codex-remote-attachments
+RAIL_3.0-upload
+RAIL_3.0-vercel-ready.zip

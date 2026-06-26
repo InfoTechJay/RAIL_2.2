@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id                  String           @id @default(cuid())
+  name                String
+  slug                String           @unique
+  categoryId          String
+  category            Category         @relation(fields: [categoryId], references: [id])
+  platformId          String
+  platform            Platform         @relation(fields: [platformId], references: [id])
+  description         String
+  location            String?
+  jurisdiction        String?
+  assetType           String
+  blockchainId        String?
+  blockchain          Blockchain?      @relation(fields: [blockchainId], references: [id])
+  tokenSymbol         String?
+  contractAddress     String?
+  offeringSize        Decimal?         @db.Decimal(18, 2)
+  minimumInvestment   Decimal?         @db.Decimal(18, 2)
+  expectedYield       Decimal?         @db.Decimal(6, 2)
+  historicalYield     Decimal?         @db.Decimal(6, 2)
+  status              AssetStatus
+  investorEligibility InvestorEligibility
+  liquidityRating     LiquidityRating
+  riskScore           Int
+  sentimentScore      Int
+  transparencyScore   Int
+  launchDate          DateTime?
+  lastUpdated         DateTime         @updatedAt
+  token               Token?
+  financialData       FinancialData?
+  riskScores          RiskScore[]
+  sentimentScores     SentimentScore[]
+  distributions       Distribution[]
+  newsMentions        NewsMention[]
+  dataSources         DataSource[]
+  watchlists          Watchlist[]
+  userNotes           UserNote[]
+  createdAt           DateTime         @default(now())
+
+  @@index([categoryId])
+  @@index([platformId])
+  @@index([status])
+  @@index([riskScore])
+}
+
+model Platform {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  website     String?
+  description String?
+  assets      Asset[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  assets      Asset[]
+}
+
+model Blockchain {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  symbol      String?
+  description String?
+  assets      Asset[]
+  tokens      Token[]
+}
+
+model Token {
+  id              String      @id @default(cuid())
+  assetId         String      @unique
+  asset           Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  blockchainId    String?
+  blockchain      Blockchain? @relation(fields: [blockchainId], references: [id])
+  symbol          String
+  contractAddress String?
+  tokenStandard   String?
+  totalSupply     Decimal?    @db.Decimal(30, 8)
+  decimals        Int?
+  transferability String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model FinancialData {
+  id                 String   @id @default(cuid())
+  assetId            String   @unique
+  asset              Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  disclosedAssetValue Decimal? @db.Decimal(18, 2)
+  offeringSize       Decimal? @db.Decimal(18, 2)
+  minimumInvestment  Decimal? @db.Decimal(18, 2)
+  expectedYield      Decimal? @db.Decimal(6, 2)
+  historicalYield    Decimal? @db.Decimal(6, 2)
+  distributionRate   Decimal? @db.Decimal(6, 2)
+  valuationDate      DateTime?
+  updatedAt          DateTime @updatedAt
+}
+
+model RiskScore {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  score           Int
+  liquidityRisk   Int
+  marketRisk      Int
+  issuerRisk      Int
+  regulatoryRisk  Int
+  methodology     String
+  notes           String?
+  assessedAt      DateTime @default(now())
+}
+
+model SentimentScore {
+  id            String   @id @default(cuid())
+  assetId       String
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  score         Int
+  sourceCount   Int
+  trend         SentimentTrend
+  summary       String
+  calculatedAt  DateTime @default(now())
+}
+
+model Distribution {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  amount      Decimal  @db.Decimal(18, 2)
+  currency    String   @default("USD")
+  periodStart DateTime
+  periodEnd   DateTime
+  paidAt      DateTime?
+  notes       String?
+}
+
+model NewsMention {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  title       String
+  publisher   String
+  url         String?
+  sentiment   Int
+  publishedAt DateTime
+}
+
+model DataSource {
+  id          String   @id @default(cuid())
+  assetId     String?
+  asset       Asset?   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  name        String
+  sourceType  String
+  url         String?
+  reliability Int
+  lastChecked DateTime @default(now())
+  notes       String?
+}
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String?
+  role      UserRole    @default(USER)
+  watchlist Watchlist[]
+  notes     UserNote[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Watchlist {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  alertOnUpdates  Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, assetId])
+}
+
+model UserNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AssetStatus {
+  ACTIVE
+  FUNDING
+  CLOSED
+  PAUSED
+  MATURED
+}
+
+enum InvestorEligibility {
+  RETAIL
+  ACCREDITED
+  QUALIFIED_PURCHASER
+  INSTITUTIONAL
+}
+
+enum LiquidityRating {
+  LOW
+  MODERATE
+  HIGH
+  LOCKED
+}
+
+enum SentimentTrend {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  MIXED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
