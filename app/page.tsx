@@ -67,7 +67,7 @@ export default function HomePage() {
           <div>
             <SectionHeader
               eyebrow="Trending Categories"
-              title="Real-world asset sectors in one ledger"
+              title="The Central Ledger for RWA Tracking"
               description="RAIL structures tokenized alternatives around asset class, platform, jurisdiction, risk indicators, and disclosure quality."
             />
             <div className="grid gap-3 sm:grid-cols-2">
