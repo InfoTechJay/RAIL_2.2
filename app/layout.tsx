@@ -3,7 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "RAIL | Real Asset Information Ledger",
+  title: "RAIL",
   description: "Research tokenized real-world assets with transparent market data, risk indicators, sentiment, and educational tools."
 };
 
