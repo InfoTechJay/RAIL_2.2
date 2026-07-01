@@ -27,7 +27,7 @@ export default function HomePage() {
               Real Asset Information Ledger
             </p>
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Research Tokenized Real-World Assets with Confidence
+              Explore Tokenized Real-World Assets 
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
               RAIL helps investors track tokenized real estate, private markets, entertainment assets, and alternative investments using
