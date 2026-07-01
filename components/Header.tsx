@@ -12,7 +12,7 @@ export function Header() {
           </span>
           <span>
             <span className="block text-lg font-semibold tracking-wide text-white">RAIL</span>
-            <span className="hidden text-xs uppercase tracking-[0.18em] text-zinc-500 sm:block">Real Asset Information Ledger</span>
+            <span className="hidden text-xs uppercase tracking-[0.18em] text-zinc-500 sm:block">Investing Intelligence</span>
           </span>
         </Link>
 
