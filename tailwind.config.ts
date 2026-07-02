@@ -5,12 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#080A0D",
-        graphite: "#111827",
-        charcoal: "#171A1F",
-        railGold: "#C9A227",
-        railGoldSoft: "#E8C95B",
-        line: "rgba(255,255,255,0.1)"
+        ink: "var(--ink-black)",
+        graphite: "var(--graphite)",
+        charcoal: "var(--charcoal-surface)",
+        railGold: "var(--rail-gold)",
+        railGoldSoft: "var(--rail-gold-soft)",
+        line: "var(--border-line)"
       },
       boxShadow: {
         glow: "0 18px 70px rgba(201, 162, 39, 0.12)"
