@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "RAIL",
+  title: "RAIL | Real Asset Information Ledger",
   description: "Research tokenized real-world assets with transparent market data, risk indicators, sentiment, and educational tools."
 };
 
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   );

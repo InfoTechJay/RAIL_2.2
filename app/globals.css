@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 :root {
+  --ink-black: #080a0d;
+  --graphite: #111827;
+  --charcoal-surface: #171a1f;
+  --rail-gold: #c9a227;
+  --rail-gold-soft: #e8c95b;
+  --border-line: rgba(255, 255, 255, 0.1);
   color-scheme: dark;
-  background: #080a0d;
+  background: var(--ink-black);
 }
 
 * {
@@ -19,7 +25,7 @@ body {
   margin: 0;
   background:
     radial-gradient(circle at 50% -10%, rgba(201, 162, 39, 0.12), transparent 34rem),
-    linear-gradient(180deg, #080a0d 0%, #0c1016 52%, #080a0d 100%);
+    linear-gradient(180deg, var(--ink-black) 0%, #0c1016 52%, var(--ink-black) 100%);
   color: #f7f2df;
 }
 
@@ -34,8 +40,14 @@ a {
 
 .rail-card {
   border: 1px solid rgba(255, 255, 255, 0.09);
-  background: linear-gradient(180deg, rgba(23, 26, 31, 0.95), rgba(17, 24, 39, 0.9));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--charcoal-surface) 95%, transparent), color-mix(in srgb, var(--graphite) 90%, transparent));
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+}
+
+.rail-wordmark {
+  color: #f8fafc;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  line-height: 1;
 }
 
 .rail-grid {
