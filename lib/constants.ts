@@ -6,5 +6,4 @@ export const navItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Watchlist", href: "/watchlist" },
   { label: "Education", href: "/education" },
-  { label: "Admin", href: "/admin" }
 ];
