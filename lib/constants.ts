@@ -3,6 +3,7 @@ export const complianceDisclaimer =
 
 export const navItems = [
   { label: "Assets", href: "/assets" },
+  { label: "Platforms", href: "/platforms" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "Watchlist", href: "/watchlist" },
   { label: "Education", href: "/education" },

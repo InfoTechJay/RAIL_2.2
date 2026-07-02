@@ -5,6 +5,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { StatCard } from "@/components/StatCard";
 import { assets, getAssetBySlug } from "@/lib/mock-data";
 import { formatCurrency, formatDate, formatPercent, scoreTone } from "@/lib/format";
+import { calculateDataConfidence, explainLiquidityScore, explainRiskScore, explainSentimentScore, explainTransparencyScore } from "@/lib/scoring";
 
 export function generateStaticParams() {
   return assets.map((asset) => ({ slug: asset.slug }));
@@ -15,6 +16,15 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
   const asset = getAssetBySlug(slug);
 
   if (!asset) notFound();
+
+  const confidence = calculateDataConfidence(asset);
+  const scoreExplanations = [
+    ["RAIL Risk Score", explainRiskScore(asset)],
+    ["RAIL Transparency Score", explainTransparencyScore(asset)],
+    ["RAIL Liquidity Score", explainLiquidityScore(asset)],
+    ["RAIL Sentiment Score", explainSentimentScore(asset)],
+    ["RAIL Data Confidence Score", confidence]
+  ] as const;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -104,6 +114,30 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
             </ul>
           </DetailSection>
 
+          <DetailSection title="RAIL Scoring">
+            <div className="grid gap-3 md:grid-cols-2">
+              {scoreExplanations.map(([title, score]) => (
+                <div key={title} className="rounded-md border border-white/10 bg-ink/40 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-white">{title}</p>
+                      <p className="mt-1 text-sm text-zinc-400">{score.explanation}</p>
+                    </div>
+                    <span className="rounded-md border border-railGold/25 bg-railGold/10 px-2.5 py-1 text-sm font-semibold text-railGold">
+                      {score.value}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">Factors used</p>
+                  <ul className="mt-2 space-y-1 text-sm leading-6 text-zinc-300">
+                    {score.factors.slice(0, 4).map((factor) => (
+                      <li key={factor}>Based on available data: {factor}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </DetailSection>
+
           <DetailSection title="Sentiment Analysis">
             <div className="flex flex-wrap items-center gap-3">
               <span className={`rounded-md border px-3 py-1.5 text-sm font-semibold ${scoreTone(asset.sentimentScore)}`}>Sentiment {asset.sentimentScore}</span>
@@ -114,7 +148,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
                 <div key={mention.title} className="rounded-md border border-white/10 bg-ink/40 p-4">
                   <p className="font-medium text-white">{mention.title}</p>
                   <p className="mt-1 text-sm text-zinc-400">
-                    {mention.publisher} · {formatDate(mention.publishedAt)} · Sentiment {mention.sentiment}
+                    {mention.publisher} - {formatDate(mention.publishedAt)} - Sentiment {mention.sentiment}
                   </p>
                 </div>
               ))}
@@ -124,7 +158,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
           <DetailSection title="Outlook">
             <p className="text-sm leading-7 text-zinc-300">{asset.outlook}</p>
             <p className="mt-4 rounded-md border border-railGold/20 bg-railGold/10 p-4 text-sm leading-6 text-railGoldSoft">
-              This outlook is informational research commentary only and is not investment advice or a recommendation.
+              This outlook is informational research commentary only and is not investment advice or a call to action.
             </p>
           </DetailSection>
         </div>
@@ -141,6 +175,23 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
             </div>
           </DetailSection>
 
+          <DetailSection title="Trust & Verification">
+            <div className="space-y-3">
+              <div className="rounded-md border border-railGold/20 bg-railGold/10 p-4">
+                <p className="text-sm font-semibold text-railGoldSoft">
+                  Data Confidence {confidence.value} - {confidence.rating}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-zinc-300">{confidence.explanation}</p>
+                <p className="mt-2 text-xs text-zinc-500">Last verified {formatDate(confidence.lastVerified)}</p>
+              </div>
+              <TrustRow label="Official Sources" value={confidence.officialSources.length ? confidence.officialSources.join(", ") : "No official source identified yet"} />
+              <TrustRow label="Supporting Sources" value={confidence.supportingSources.length ? confidence.supportingSources.join(", ") : "Supporting source review pending"} />
+              <TrustRow label="Blockchain Verification" value={asset.contractAddress ? `${asset.blockchain} contract reference available: ${asset.contractAddress}` : "Blockchain contract reference pending"} />
+              <TrustRow label="Platform Verification" value={`${asset.platform} disclosure review required before production confidence approval`} />
+              <TrustRow label="Regulatory Information" value={`${asset.jurisdiction} regulatory context should be verified against official filings and issuer documents`} />
+            </div>
+          </DetailSection>
+
           <DetailSection title="Data Sources">
             <div className="space-y-3">
               {asset.dataSources.map((source) => (
@@ -151,7 +202,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
                   </div>
                   <p className="mt-2 text-sm text-zinc-400">{source.type}</p>
                   <p className="mt-2 text-xs text-zinc-500">
-                    Reliability {source.reliability} · Checked {formatDate(source.lastChecked)}
+                    Reliability {source.reliability} - Checked {formatDate(source.lastChecked)}
                   </p>
                 </div>
               ))}
@@ -203,4 +254,13 @@ function RiskBar({ label, value }: { label: string; value: number }) {
 
 function Badge({ label }: { label: string }) {
   return <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-300">{label}</span>;
+}
+
+function TrustRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-ink/40 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">{label}</p>
+      <p className="mt-2 text-sm leading-6 text-zinc-300">{value}</p>
+    </div>
+  );
 }

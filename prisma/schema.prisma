@@ -33,6 +33,16 @@ model Asset {
   riskScore           Int
   sentimentScore      Int
   transparencyScore   Int
+  liquidityScore      Int              @default(0)
+  dataConfidenceScore Int              @default(0)
+  confidenceLevel     String?
+  confidenceReasons   String[]         @default([])
+  lastVerified        DateTime?
+  officialSources     String[]         @default([])
+  supportingSources   String[]         @default([])
+  blockchainVerification String?
+  platformVerification   String?
+  regulatoryInformation  String?
   launchDate          DateTime?
   lastUpdated         DateTime         @updatedAt
   token               Token?
@@ -42,6 +52,7 @@ model Asset {
   distributions       Distribution[]
   newsMentions        NewsMention[]
   dataSources         DataSource[]
+  scoreExplanations   ScoreExplanation[]
   watchlists          Watchlist[]
   userNotes           UserNote[]
   createdAt           DateTime         @default(now())
@@ -53,14 +64,30 @@ model Asset {
 }
 
 model Platform {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  website     String?
-  description String?
-  assets      Asset[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  name                     String   @unique
+  slug                     String   @unique
+  logo                     String?
+  website                  String?
+  description              String?
+  headquarters             String?
+  yearFounded              Int?
+  regulatoryInformation    String?
+  supportedBlockchains     String[] @default([])
+  assetCategories          String[] @default([])
+  assetsUnderManagement    Decimal? @db.Decimal(18, 2)
+  numberOfListedAssets     Int      @default(0)
+  totalTokenizedValue      Decimal? @db.Decimal(18, 2)
+  averageRiskScore         Int      @default(0)
+  averageTransparencyScore Int      @default(0)
+  averageLiquidityScore    Int      @default(0)
+  averageSentimentScore    Int      @default(0)
+  newsFeed                 String[] @default([])
+  lastUpdated              DateTime?
+  assets                   Asset[]
+  dataSources              DataSource[]
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 }
 
 model Category {
@@ -159,15 +186,76 @@ model NewsMention {
 }
 
 model DataSource {
+  id                    String    @id @default(cuid())
+  assetId               String?
+  asset                 Asset?    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  platformId            String?
+  platform              Platform? @relation(fields: [platformId], references: [id], onDelete: SetNull)
+  name                  String
+  slug                  String?   @unique
+  sourceType            String
+  website               String?
+  apiUrl                String?
+  url                   String?
+  trustLevel            String?
+  updateFrequency       String?
+  active                Boolean   @default(true)
+  primaryAssetTypes     String[]  @default([])
+  supportedBlockchains  String[]  @default([])
+  updateSchedule        String?
+  reliability           Int
+  lastChecked           DateTime  @default(now())
+  lastSync              DateTime?
+  notes                 String?
+}
+
+model ScoreExplanation {
   id          String   @id @default(cuid())
-  assetId     String?
-  asset       Asset?   @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  name        String
-  sourceType  String
-  url         String?
-  reliability Int
-  lastChecked DateTime @default(now())
-  notes       String?
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  scoreType   String
+  value       Int
+  rating      String
+  explanation String
+  factors     String[] @default([])
+  calculatedAt DateTime @default(now())
+
+  @@index([assetId])
+  @@index([scoreType])
+}
+
+model SyncJob {
+  id          String   @id @default(cuid())
+  connectorId String
+  sourceName  String
+  status      String
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  recordsFetched Int    @default(0)
+  recordsSaved   Int    @default(0)
+  errors      String[] @default([])
+  logs        SyncLog[]
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  syncJobId String
+  syncJob   SyncJob  @relation(fields: [syncJobId], references: [id], onDelete: Cascade)
+  level     String
+  message   String
+  context   Json?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
 }
 
 model User {

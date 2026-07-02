@@ -1,51 +1,189 @@
 import { PrismaClient } from "@prisma/client";
-import { assets } from "../lib/mock-data";
+import { dataSources } from "../lib/data-source-registry";
+import { assets, blockchains, categories, platforms } from "../lib/mock-data";
+import { platformProfiles } from "../lib/platform-data";
+import { calculateDataConfidence, explainLiquidityScore, explainRiskScore, explainSentimentScore, explainTransparencyScore } from "../lib/scoring";
 
 const prisma = new PrismaClient();
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function reliabilityForTrust(trustLevel: string) {
+  if (trustLevel === "High") return 90;
+  if (trustLevel === "Medium") return 72;
+  return 55;
+}
+
+function platformNameForSource(sourceName: string) {
+  const aliases: Record<string, string> = {
+    "Lofty Marketplace": "Lofty",
+    "Ondo OUSG": "Ondo Finance",
+    "BlackRock BUIDL": "BlackRock BUIDL"
+  };
+  return aliases[sourceName] ?? sourceName;
+}
 
 async function main() {
   const categoryRecords = new Map<string, string>();
   const platformRecords = new Map<string, string>();
   const blockchainRecords = new Map<string, string>();
 
-  for (const asset of assets) {
+  for (const categoryName of categories) {
     const category = await prisma.category.upsert({
-      where: { slug: asset.category.toLowerCase().replaceAll(" ", "-") },
-      update: {},
+      where: { slug: slugify(categoryName) },
+      update: {
+        name: categoryName,
+        description: `${categoryName} assets tracked by RAIL.`
+      },
       create: {
-        name: asset.category,
-        slug: asset.category.toLowerCase().replaceAll(" ", "-"),
-        description: `${asset.category} assets tracked by RAIL.`
+        name: categoryName,
+        slug: slugify(categoryName),
+        description: `${categoryName} assets tracked by RAIL.`
       }
     });
-    categoryRecords.set(asset.category, category.id);
+    categoryRecords.set(categoryName, category.id);
+  }
 
-    const platform = await prisma.platform.upsert({
-      where: { slug: asset.platform.toLowerCase().replaceAll(" ", "-") },
-      update: {},
-      create: {
-        name: asset.platform,
-        slug: asset.platform.toLowerCase().replaceAll(" ", "-"),
-        description: `Sample ${asset.platform} platform profile.`
-      }
-    });
-    platformRecords.set(asset.platform, platform.id);
-
+  for (const blockchainName of blockchains) {
     const blockchain = await prisma.blockchain.upsert({
-      where: { name: asset.blockchain },
-      update: {},
+      where: { name: blockchainName },
+      update: {
+        symbol: blockchainName.slice(0, 4).toUpperCase()
+      },
       create: {
-        name: asset.blockchain,
-        symbol: asset.blockchain.slice(0, 4).toUpperCase()
+        name: blockchainName,
+        symbol: blockchainName.slice(0, 4).toUpperCase()
       }
     });
-    blockchainRecords.set(asset.blockchain, blockchain.id);
+    blockchainRecords.set(blockchainName, blockchain.id);
+  }
+
+  const profileByName = new Map(platformProfiles.map((profile) => [profile.name, profile]));
+  for (const platformName of platforms) {
+    const profile = profileByName.get(platformName);
+    const platform = await prisma.platform.upsert({
+      where: { slug: slugify(platformName) },
+      update: {
+        name: platformName,
+        logo: profile?.logo,
+        website: profile?.website,
+        description: profile?.description ?? `${platformName} platform profile tracked by RAIL.`,
+        headquarters: profile?.headquarters,
+        yearFounded: profile?.yearFounded,
+        regulatoryInformation: profile?.regulatoryInformation,
+        supportedBlockchains: profile?.supportedBlockchains ?? [],
+        assetCategories: profile?.assetCategories ?? [],
+        assetsUnderManagement: profile?.assetsUnderManagement,
+        numberOfListedAssets: profile?.listedAssets ?? 0,
+        totalTokenizedValue: profile?.totalTokenizedValue,
+        averageRiskScore: profile?.averageRiskScore ?? 0,
+        averageTransparencyScore: profile?.averageTransparencyScore ?? 0,
+        averageLiquidityScore: profile?.averageLiquidityScore ?? 0,
+        averageSentimentScore: profile?.averageSentimentScore ?? 0,
+        newsFeed: profile?.recentNews ?? [],
+        lastUpdated: profile?.lastUpdated ? new Date(profile.lastUpdated) : null
+      },
+      create: {
+        name: platformName,
+        slug: slugify(platformName),
+        logo: profile?.logo,
+        website: profile?.website,
+        description: profile?.description ?? `${platformName} platform profile tracked by RAIL.`,
+        headquarters: profile?.headquarters,
+        yearFounded: profile?.yearFounded,
+        regulatoryInformation: profile?.regulatoryInformation,
+        supportedBlockchains: profile?.supportedBlockchains ?? [],
+        assetCategories: profile?.assetCategories ?? [],
+        assetsUnderManagement: profile?.assetsUnderManagement,
+        numberOfListedAssets: profile?.listedAssets ?? 0,
+        totalTokenizedValue: profile?.totalTokenizedValue,
+        averageRiskScore: profile?.averageRiskScore ?? 0,
+        averageTransparencyScore: profile?.averageTransparencyScore ?? 0,
+        averageLiquidityScore: profile?.averageLiquidityScore ?? 0,
+        averageSentimentScore: profile?.averageSentimentScore ?? 0,
+        newsFeed: profile?.recentNews ?? [],
+        lastUpdated: profile?.lastUpdated ? new Date(profile.lastUpdated) : null
+      }
+    });
+    platformRecords.set(platformName, platform.id);
+  }
+
+  for (const source of dataSources) {
+    const platformId = platformRecords.get(platformNameForSource(source.name));
+    await prisma.dataSource.upsert({
+      where: { slug: source.slug },
+      update: {
+        platformId,
+        name: source.name,
+        sourceType: source.sourceType,
+        website: source.website,
+        apiUrl: source.apiUrl,
+        trustLevel: source.trustLevel,
+        updateFrequency: source.updateFrequency,
+        active: source.active,
+        primaryAssetTypes: source.primaryAssetTypes,
+        supportedBlockchains: source.supportedBlockchains,
+        updateSchedule: source.updateSchedule,
+        reliability: reliabilityForTrust(source.trustLevel),
+        lastChecked: new Date(source.lastSync),
+        lastSync: new Date(source.lastSync),
+        notes: source.notes
+      },
+      create: {
+        platformId,
+        name: source.name,
+        slug: source.slug,
+        sourceType: source.sourceType,
+        website: source.website,
+        apiUrl: source.apiUrl,
+        trustLevel: source.trustLevel,
+        updateFrequency: source.updateFrequency,
+        active: source.active,
+        primaryAssetTypes: source.primaryAssetTypes,
+        supportedBlockchains: source.supportedBlockchains,
+        updateSchedule: source.updateSchedule,
+        reliability: reliabilityForTrust(source.trustLevel),
+        lastChecked: new Date(source.lastSync),
+        lastSync: new Date(source.lastSync),
+        notes: source.notes
+      }
+    });
   }
 
   for (const asset of assets) {
+    const confidence = calculateDataConfidence(asset);
+    const liquidity = explainLiquidityScore(asset);
+    const explanations = [
+      { scoreType: "RAIL Risk Score", ...explainRiskScore(asset) },
+      { scoreType: "RAIL Transparency Score", ...explainTransparencyScore(asset) },
+      { scoreType: "RAIL Liquidity Score", ...liquidity },
+      { scoreType: "RAIL Sentiment Score", ...explainSentimentScore(asset) },
+      { scoreType: "RAIL Data Confidence Score", ...confidence }
+    ];
+
     const createdAsset = await prisma.asset.upsert({
       where: { slug: asset.slug },
       update: {
+        categoryId: categoryRecords.get(asset.category)!,
+        platformId: platformRecords.get(asset.platform)!,
+        blockchainId: blockchainRecords.get(asset.blockchain),
+        riskScore: asset.riskScore,
+        sentimentScore: asset.sentimentScore,
+        transparencyScore: asset.transparencyScore,
+        liquidityScore: liquidity.value,
+        dataConfidenceScore: confidence.value,
+        confidenceLevel: confidence.rating,
+        confidenceReasons: confidence.factors,
+        lastVerified: new Date(confidence.lastVerified),
+        officialSources: confidence.officialSources,
+        supportingSources: confidence.supportingSources,
+        blockchainVerification: asset.contractAddress
+          ? `${asset.blockchain} contract reference available: ${asset.contractAddress}`
+          : "Blockchain contract reference pending",
+        platformVerification: `${asset.platform} disclosure review required before production confidence approval`,
+        regulatoryInformation: `${asset.jurisdiction} regulatory context should be verified against official filings and issuer documents`,
         lastUpdated: new Date(asset.lastUpdated)
       },
       create: {
@@ -70,6 +208,18 @@ async function main() {
         riskScore: asset.riskScore,
         sentimentScore: asset.sentimentScore,
         transparencyScore: asset.transparencyScore,
+        liquidityScore: liquidity.value,
+        dataConfidenceScore: confidence.value,
+        confidenceLevel: confidence.rating,
+        confidenceReasons: confidence.factors,
+        lastVerified: new Date(confidence.lastVerified),
+        officialSources: confidence.officialSources,
+        supportingSources: confidence.supportingSources,
+        blockchainVerification: asset.contractAddress
+          ? `${asset.blockchain} contract reference available: ${asset.contractAddress}`
+          : "Blockchain contract reference pending",
+        platformVerification: `${asset.platform} disclosure review required before production confidence approval`,
+        regulatoryInformation: `${asset.jurisdiction} regulatory context should be verified against official filings and issuer documents`,
         launchDate: new Date(asset.launchDate),
         lastUpdated: new Date(asset.lastUpdated),
         token: {
@@ -130,6 +280,16 @@ async function main() {
             sentiment: mention.sentiment,
             publishedAt: new Date(mention.publishedAt)
           }))
+        },
+        scoreExplanations: {
+          create: explanations.map((score) => ({
+            scoreType: score.scoreType,
+            value: score.value,
+            rating: score.rating,
+            explanation: score.explanation,
+            factors: score.factors,
+            calculatedAt: new Date(asset.lastUpdated)
+          }))
         }
       }
     });
@@ -151,7 +311,9 @@ async function main() {
 
   const demoUser = await prisma.user.upsert({
     where: { email: "demo@rail.local" },
-    update: {},
+    update: {
+      role: "ADMIN"
+    },
     create: {
       email: "demo@rail.local",
       name: "Demo Analyst",
@@ -162,7 +324,9 @@ async function main() {
   const firstAsset = await prisma.asset.findFirstOrThrow({ where: { slug: assets[0].slug } });
   await prisma.watchlist.upsert({
     where: { userId_assetId: { userId: demoUser.id, assetId: firstAsset.id } },
-    update: {},
+    update: {
+      alertOnUpdates: true
+    },
     create: {
       userId: demoUser.id,
       assetId: firstAsset.id,

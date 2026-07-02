@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
+import { Activity, CheckCircle2, Clock3, DatabaseZap, Edit3, FileCheck2, Layers3, Plus, RotateCw, Save, ShieldAlert, Trash2, X } from "lucide-react";
+import { connectorRegistry } from "@/lib/ingestion/connectors";
+import { dataSources } from "@/lib/data-source-registry";
 import { assets as seedAssets, categories, platforms, type RailAsset } from "@/lib/mock-data";
+import { platformProfiles } from "@/lib/platform-data";
 
 type EditableAsset = Pick<
   RailAsset,
@@ -20,6 +23,31 @@ const emptyAsset: EditableAsset = {
   status: "FUNDING",
   location: ""
 };
+
+const adminWorkflows = [
+  { label: "Manage Platforms", detail: `${platformProfiles.length} intelligence profiles`, icon: Layers3 },
+  { label: "Manage Categories", detail: `${categories.length} asset classes`, icon: FileCheck2 },
+  { label: "Manage Data Sources", detail: `${dataSources.length} registry sources`, icon: DatabaseZap },
+  { label: "Trigger Sync Jobs", detail: `${connectorRegistry.length} connector shells`, icon: RotateCw }
+];
+
+const pendingApprovals = [
+  "Review source confidence changes before publishing",
+  "Approve normalized asset updates from connectors",
+  "Flag conflicting issuer, chain, or regulatory data"
+];
+
+const syncHistory = [
+  { source: "RWA.xyz", status: "Queued", detail: "Daily market intelligence sync" },
+  { source: "SEC EDGAR", status: "Ready", detail: "Regulatory document scan" },
+  { source: "PolygonScan", status: "Ready", detail: "Contract verification check" }
+];
+
+const auditLogs = [
+  "Asset score methodology updated",
+  "Data source trust level reviewed",
+  "Admin role gate pending authentication provider"
+];
 
 export function AdminDashboard() {
   const [records, setRecords] = useState<EditableAsset[]>(
@@ -49,8 +77,9 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      <section className="rail-card rounded-lg p-5">
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+        <section className="rail-card rounded-lg p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-semibold text-white">Asset Registry</h2>
@@ -106,10 +135,10 @@ export function AdminDashboard() {
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
 
-      <aside className="space-y-6">
-        <section className="rail-card rounded-lg p-5">
+        <aside className="space-y-6">
+          <section className="rail-card rounded-lg p-5">
           <h2 className="font-semibold text-white">{editing ? (isEditingExisting ? "Edit Asset" : "Add Asset") : "Admin Controls"}</h2>
           {editing ? (
             <div className="mt-5 space-y-4">
@@ -182,23 +211,68 @@ export function AdminDashboard() {
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
-              <p>Manage asset information, risk scores, sentiment scores, platforms, categories, and data sources.</p>
-              <p>Future implementation should protect this route with role-based authentication and persist changes through Prisma mutations.</p>
-            </div>
-          )}
-        </section>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {adminWorkflows.map((workflow) => (
+                  <WorkflowItem key={workflow.label} label={workflow.label} detail={workflow.detail} icon={<workflow.icon className="h-4 w-4" aria-hidden />} />
+                ))}
+                <p className="pt-2 text-sm leading-6 text-zinc-400">
+                  Future implementation should protect this route with role-based authentication and persist changes through Prisma mutations.
+                </p>
+              </div>
+            )}
+          </section>
 
-        <section className="rail-card rounded-lg p-5">
-          <h2 className="font-semibold text-white">Data Source Workflow</h2>
-          <p className="mt-3 text-sm leading-6 text-zinc-400">
-            Live integrations can be added as source adapters that normalize issuer reports, filings, platform data, news mentions, and public
-            registry records into the Prisma models.
-          </p>
-        </section>
-      </aside>
+          <section className="rail-card rounded-lg p-5">
+            <h2 className="font-semibold text-white">Data Source Workflow</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              Live integrations can be added as connector adapters that fetch, normalize, validate, score confidence, save, and log source data.
+            </p>
+            <div className="mt-4 grid gap-2">
+              <WorkflowItem label="Active sources" detail={`${dataSources.filter((source) => source.active).length} enabled`} icon={<CheckCircle2 className="h-4 w-4" aria-hidden />} />
+              <WorkflowItem label="Failed imports" detail="No failures in mock queue" icon={<ShieldAlert className="h-4 w-4" aria-hidden />} />
+              <WorkflowItem label="Sync history" detail={`${syncHistory.length} sample jobs`} icon={<Clock3 className="h-4 w-4" aria-hidden />} />
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section className="grid gap-6 lg:grid-cols-3">
+        <AdminPanel title="Approval Queue" items={pendingApprovals} />
+        <AdminPanel title="Recent Sync Jobs" items={syncHistory.map((job) => `${job.source}: ${job.status} - ${job.detail}`)} />
+        <AdminPanel title="Audit Log" items={auditLogs} />
+      </section>
     </div>
+  );
+}
+
+function WorkflowItem({ label, detail, icon }: { label: string; detail: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-white/10 bg-ink/40 p-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-railGold/20 bg-railGold/10 text-railGold">{icon}</span>
+      <span>
+        <span className="block text-sm font-semibold text-white">{label}</span>
+        <span className="mt-0.5 block text-xs text-zinc-500">{detail}</span>
+      </span>
+    </div>
+  );
+}
+
+function AdminPanel({ title, items }: { title: string; items: string[] }) {
+  return (
+    <section className="rail-card rounded-lg p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <Activity className="h-4 w-4 text-railGold" aria-hidden />
+        <h2 className="font-semibold text-white">{title}</h2>
+      </div>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <p key={item} className="rounded-md border border-white/10 bg-ink/40 p-3 text-sm leading-6 text-zinc-300">
+            {item}
+          </p>
+        ))}
+      </div>
+    </section>
   );
 }
 

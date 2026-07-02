@@ -25,7 +25,7 @@ export function WatchlistClient() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-railGold">{asset.category}</p>
                 <h2 className="mt-2 text-xl font-semibold text-white">{asset.name}</h2>
                 <p className="mt-2 text-sm text-zinc-400">
-                  {asset.platform} · {asset.location} · Updated {formatDate(asset.lastUpdated)}
+                  {asset.platform} - {asset.location} - Updated {formatDate(asset.lastUpdated)}
                 </p>
               </div>
               <button

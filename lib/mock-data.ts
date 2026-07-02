@@ -58,14 +58,51 @@ export type RailAsset = {
 
 export const categories = [
   "Tokenized Real Estate",
+  "Tokenized Treasuries",
+  "Money Market Funds",
+  "Private Equity",
+  "Private Credit",
+  "Entertainment Royalties",
+  "Music Rights",
+  "Film Rights",
+  "Sports Assets",
+  "Infrastructure",
+  "Agriculture",
+  "Carbon Credits",
+  "Commodities",
+  "Art & Collectibles",
+  "Public Equities",
+  "Government Securities",
+  "Other Real World Assets",
   "Tokenized Private Company",
   "Entertainment Royalty",
-  "Farmland",
-  "Private Credit"
+  "Farmland"
 ];
 
-export const platforms = ["Harbor Ledger", "CapTableX", "RoyaltyVault", "AgriToken Markets", "CreditRail"];
-export const blockchains = ["Ethereum", "Polygon", "Avalanche", "Stellar"];
+export const platforms = [
+  "RealT",
+  "Lofty",
+  "Superstate USTB",
+  "Ondo Finance",
+  "Franklin Templeton Digital Assets",
+  "BlackRock BUIDL",
+  "Securitize",
+  "Republic",
+  "DigiShares",
+  "RedSwan",
+  "Tokeny",
+  "INX",
+  "tZERO",
+  "Propy",
+  "Binaryx",
+  "HoneyBricks",
+  "Harbor Ledger",
+  "CapTableX",
+  "RoyaltyVault",
+  "AgriToken Markets",
+  "CreditRail"
+];
+export const blockchains = ["Ethereum", "Polygon", "Avalanche", "Stellar", "Arbitrum", "Base", "Solana", "XRPL", "Gnosis", "Algorand"];
 
 export const assets: RailAsset[] = [
   {
@@ -292,34 +329,54 @@ export const assets: RailAsset[] = [
 
 export const educationArticles = [
   {
-    title: "What are tokenized real-world assets?",
-    summary: "A plain-English overview of digital records that represent interests in real estate, credit, royalties, private markets, or other off-chain assets.",
+    title: "What are RWAs?",
+    summary: "A plain-English overview of real-world assets represented through digital records, tokens, transfer agents, or blockchain infrastructure.",
     readTime: "7 min"
   },
   {
-    title: "What is tokenized real estate?",
-    summary: "How fractional property interests, income streams, transfer restrictions, and reporting packages can be represented digitally.",
+    title: "Tokenized Real Estate",
+    summary: "How property interests, rental income streams, transfer restrictions, disclosures, and property documents can be represented digitally.",
     readTime: "6 min"
   },
   {
-    title: "Understanding liquidity risk",
-    summary: "Why an asset can have a token and still be hard to sell, transfer, value, or exit under stressed market conditions.",
+    title: "Tokenized Treasuries",
+    summary: "How treasury-backed and money market fund products are structured, verified, and compared across tokenized fund platforms.",
     readTime: "8 min"
   },
   {
-    title: "Understanding security tokens",
-    summary: "A research primer on digital securities, compliance controls, transfer rules, and investor eligibility checks.",
+    title: "Security Tokens",
+    summary: "A research primer on regulated digital securities, compliance controls, transfer rules, and investor eligibility checks.",
     readTime: "9 min"
   },
   {
-    title: "How to research tokenized investments",
-    summary: "A repeatable diligence workflow for reviewing issuer disclosures, asset economics, risks, valuation, and data quality.",
+    title: "Smart Contracts",
+    summary: "What smart contracts can and cannot verify, and why contract data should be paired with issuer, platform, and regulatory sources.",
     readTime: "10 min"
   },
   {
-    title: "Why RAIL does not provide financial advice",
-    summary: "How RAIL separates market information and education from investment recommendations or regulated services.",
+    title: "Investment Risks",
+    summary: "A neutral overview of market, issuer, liquidity, regulatory, operational, and valuation risks in tokenized asset research.",
     readTime: "5 min"
+  },
+  {
+    title: "Liquidity Risk",
+    summary: "Why an asset can have a token and still be difficult to sell, transfer, value, or exit under stressed market conditions.",
+    readTime: "8 min"
+  },
+  {
+    title: "Platform Risk",
+    summary: "How to evaluate issuer, marketplace, custody, transfer agent, reporting, compliance, and operational dependencies.",
+    readTime: "7 min"
+  },
+  {
+    title: "How RAIL Scores Assets",
+    summary: "How RAIL's placeholder scoring engines use explainable factors for risk, transparency, liquidity, sentiment, and confidence.",
+    readTime: "9 min"
+  },
+  {
+    title: "How Data is Verified",
+    summary: "How official issuer sources, blockchain explorers, regulatory filings, supporting sources, freshness, and conflicts affect trust.",
+    readTime: "9 min"
   }
 ];
 
@@ -338,22 +395,30 @@ export function dashboardMetrics() {
   };
 }
 
-export const categoryBreakdown = categories.map((category) => ({
-  name: category.replace("Tokenized ", ""),
-  value: assets.filter((asset) => asset.category === category).length
-}));
+export const categoryBreakdown = categories
+  .map((category) => ({
+    name: category.replace("Tokenized ", ""),
+    value: assets.filter((asset) => asset.category === category).length
+  }))
+  .filter((category) => category.value > 0);
 
-export const yieldByCategory = categories.map((category) => {
-  const categoryAssets = assets.filter((asset) => asset.category === category);
-  const average = categoryAssets.reduce((sum, asset) => sum + asset.expectedYield, 0) / categoryAssets.length;
-  return {
-    category: category.replace("Tokenized ", "").replace("Entertainment ", "Entertainment"),
-    yield: Number.isFinite(average) ? Number(average.toFixed(1)) : 0
-  };
-});
+export const yieldByCategory = categories
+  .map((category) => {
+    const categoryAssets = assets.filter((asset) => asset.category === category);
+    const average = categoryAssets.reduce((sum, asset) => sum + asset.expectedYield, 0) / categoryAssets.length;
+    return {
+      category: category.replace("Tokenized ", "").replace("Entertainment ", "Entertainment"),
+      yield: Number.isFinite(average) ? Number(average.toFixed(1)) : 0,
+      count: categoryAssets.length
+    };
+  })
+  .filter((category) => category.count > 0)
+  .map(({ count, ...category }) => category);
 
-export const topPlatforms = platforms.map((platform) => ({
-  platform,
-  assets: assets.filter((asset) => asset.platform === platform).length,
-  value: assets.filter((asset) => asset.platform === platform).reduce((sum, asset) => sum + asset.disclosedAssetValue, 0)
-}));
+export const topPlatforms = platforms
+  .map((platform) => ({
+    platform,
+    assets: assets.filter((asset) => asset.platform === platform).length,
+    value: assets.filter((asset) => asset.platform === platform).reduce((sum, asset) => sum + asset.disclosedAssetValue, 0)
+  }))
+  .filter((platform) => platform.assets > 0);

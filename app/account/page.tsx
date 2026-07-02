@@ -44,7 +44,7 @@ export default function AccountPage() {
           <section className="rail-card rounded-lg p-5">
             <h2 className="font-semibold text-white">Authentication Roadmap</h2>
             <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
-              <p>Recommended providers: Clerk, Auth.js, Supabase Auth, or Vercel-integrated OAuth.</p>
+              <p>Future auth provider options: Clerk, Auth.js, Supabase Auth, or Vercel-integrated OAuth.</p>
               <p>Once connected, protect `/admin`, store watchlists by user ID, and add account-level alert preferences.</p>
             </div>
           </section>
