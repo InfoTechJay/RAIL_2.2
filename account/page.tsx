@@ -1,71 +1,43 @@
 import Link from "next/link";
-import { Bell, BookmarkCheck, FileText, LockKeyhole, UserCircle } from "lucide-react";
+import { AuthPanel } from "@/components/AuthPanel";
 import { Disclaimer } from "@/components/Disclaimer";
-import { SectionHeader } from "@/components/SectionHeader";
 
-export default function AccountPage() {
+export default function LoginPage() {
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <SectionHeader
-        eyebrow="Account"
-        title="Your RAIL account workspace"
-        description="A placeholder account center for standard users. Connect authentication to enable saved preferences, private notes, and update alerts."
-      />
-
-      <div className="grid gap-6 lg:grid-cols-[0.68fr_0.32fr]">
-        <section className="rail-card rounded-lg p-5 md:p-6">
-          <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-md border border-railGold/25 bg-railGold/10 text-railGold">
-                <UserCircle className="h-7 w-7" aria-hidden />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-white">Standard User</h1>
-                <p className="mt-1 text-sm text-zinc-400">Authentication not connected yet</p>
-              </div>
-            </div>
-            <Link
-              href="/login"
-              className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-railGold bg-railGold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-railGoldSoft"
-            >
-              Login / Register
-            </Link>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <AccountCard icon={<BookmarkCheck className="h-5 w-5" />} title="Saved Assets" value="2 sample assets" detail="Future accounts will persist watchlists to the database." />
-            <AccountCard icon={<FileText className="h-5 w-5" />} title="Research Notes" value="Local placeholder" detail="Private notes will sync after auth is integrated." />
-            <AccountCard icon={<Bell className="h-5 w-5" />} title="Update Alerts" value="Not configured" detail="Daily or weekly refresh alerts can be added here." />
-            <AccountCard icon={<LockKeyhole className="h-5 w-5" />} title="Role" value="Standard user" detail="Admin tools remain separated from the public navigation." />
-          </div>
-        </section>
-
-        <aside className="space-y-6">
-          <section className="rail-card rounded-lg p-5">
-            <h2 className="font-semibold text-white">Authentication Roadmap</h2>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
-              <p>Recommended providers: Clerk, Auth.js, Supabase Auth, or Vercel-integrated OAuth.</p>
-              <p>Once connected, protect `/admin`, store watchlists by user ID, and add account-level alert preferences.</p>
-            </div>
-          </section>
-          <Disclaimer compact />
-        </aside>
+    <main className="mx-auto grid min-h-[calc(100vh-96px)] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-railGold">Account Access</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">Login or register for RAIL account tools</h1>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-400 md:text-base">
+          Accounts will support saved assets, personal diligence notes, alert preferences, and role-based admin access. The current form is ready
+          for integration with a production authentication provider.
+        </p>
+        <div className="mt-6 grid gap-3 text-sm text-zinc-300 sm:grid-cols-2">
+          <Feature title="Watchlists" detail="Save tokenized assets for follow-up research." />
+          <Feature title="Alerts" detail="Prepare daily or weekly update notifications." />
+          <Feature title="Notes" detail="Keep private research notes tied to asset records." />
+          <Feature title="Roles" detail="Separate standard users from future admin access." />
+        </div>
+        <p className="mt-6 text-sm text-zinc-500">
+          Already exploring?{" "}
+          <Link href="/assets" className="font-semibold text-railGold hover:text-railGoldSoft">
+            Return to asset screener
+          </Link>
+        </p>
+      </section>
+      <div className="space-y-5">
+        <AuthPanel />
+        <Disclaimer compact />
       </div>
     </main>
   );
 }
 
-function AccountCard({ icon, title, value, detail }: { icon: React.ReactNode; title: string; value: string; detail: string }) {
+function Feature({ title, detail }: { title: string; detail: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-ink/45 p-4">
-      <div className="flex items-center gap-3">
-        <div className="rounded-md border border-railGold/25 bg-railGold/10 p-2 text-railGold">{icon}</div>
-        <div>
-          <p className="font-semibold text-white">{title}</p>
-          <p className="mt-1 text-sm text-railGoldSoft">{value}</p>
-        </div>
-      </div>
-      <p className="mt-3 text-sm leading-6 text-zinc-400">{detail}</p>
+    <div className="rounded-lg border border-white/10 bg-charcoal/80 p-4">
+      <p className="font-semibold text-white">{title}</p>
+      <p className="mt-2 leading-6 text-zinc-400">{detail}</p>
     </div>
   );
 }
