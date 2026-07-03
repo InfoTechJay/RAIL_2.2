@@ -47,7 +47,7 @@ export default function HomePage() {
               Real Asset Information Ledger
             </p>
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Research Tokenized Real-World Assets with Confidence
+              The Largest Hub for Tokenized Asset Research
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
               RAIL is an account-based research platform for tokenized real estate, private markets, royalties, farmland, credit, and other
