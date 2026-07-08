@@ -146,6 +146,25 @@ type PlatformWithAssets = Prisma.PlatformGetPayload<{
   };
 }>;
 
+const fallbackCategories = [
+  "Tokenized Real Estate",
+  "Tokenized Treasuries",
+  "Money Market Funds",
+  "Private Equity",
+  "Private Credit",
+  "Entertainment Royalties",
+  "Agriculture",
+  "Other Real World Assets"
+];
+
+function dataErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown database error";
+}
+
+function logDataError(scope: string, error: unknown) {
+  console.error(`[RAIL data] ${scope}: ${dataErrorMessage(error)}`);
+}
+
 function toNumber(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
@@ -283,69 +302,93 @@ function mapPlatform(platform: PlatformWithAssets, totalValue: number): LivePlat
 }
 
 export async function getAssets() {
-  const assets = await prisma.asset.findMany({
-    orderBy: { lastUpdated: "desc" },
-    include: {
-      category: true,
-      platform: true,
-      blockchain: true,
-      token: true,
-      financialData: true,
-      riskScores: true,
-      sentimentScores: true,
-      dataSources: true,
-      newsMentions: true,
-      scoreExplanations: true
-    }
-  });
-  return assets.map(mapAsset);
+  try {
+    const assets = await prisma.asset.findMany({
+      orderBy: { lastUpdated: "desc" },
+      include: {
+        category: true,
+        platform: true,
+        blockchain: true,
+        token: true,
+        financialData: true,
+        riskScores: true,
+        sentimentScores: true,
+        dataSources: true,
+        newsMentions: true,
+        scoreExplanations: true
+      }
+    });
+    return assets.map(mapAsset);
+  } catch (error) {
+    logDataError("getAssets", error);
+    return [];
+  }
 }
 
 export async function getAssetBySlug(slug: string) {
-  const asset = await prisma.asset.findUnique({
-    where: { slug },
-    include: {
-      category: true,
-      platform: true,
-      blockchain: true,
-      token: true,
-      financialData: true,
-      riskScores: true,
-      sentimentScores: true,
-      dataSources: true,
-      newsMentions: true,
-      scoreExplanations: true
-    }
-  });
-  return asset ? mapAsset(asset) : null;
+  try {
+    const asset = await prisma.asset.findUnique({
+      where: { slug },
+      include: {
+        category: true,
+        platform: true,
+        blockchain: true,
+        token: true,
+        financialData: true,
+        riskScores: true,
+        sentimentScores: true,
+        dataSources: true,
+        newsMentions: true,
+        scoreExplanations: true
+      }
+    });
+    return asset ? mapAsset(asset) : null;
+  } catch (error) {
+    logDataError(`getAssetBySlug:${slug}`, error);
+    return null;
+  }
 }
 
 export async function getScreenerOptions() {
-  const [categories, platforms, blockchains] = await Promise.all([
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
-    prisma.platform.findMany({ orderBy: { name: "asc" } }),
-    prisma.blockchain.findMany({ orderBy: { name: "asc" } })
-  ]);
-  return {
-    categories: categories.map((category) => category.name),
-    platforms: platforms.map((platform) => platform.name),
-    blockchains: blockchains.map((blockchain) => blockchain.name)
-  };
+  try {
+    const [categories, platforms, blockchains] = await Promise.all([
+      prisma.category.findMany({ orderBy: { name: "asc" } }),
+      prisma.platform.findMany({ orderBy: { name: "asc" } }),
+      prisma.blockchain.findMany({ orderBy: { name: "asc" } })
+    ]);
+    return {
+      categories: categories.map((category) => category.name),
+      platforms: platforms.map((platform) => platform.name),
+      blockchains: blockchains.map((blockchain) => blockchain.name)
+    };
+  } catch (error) {
+    logDataError("getScreenerOptions", error);
+    return {
+      categories: fallbackCategories,
+      platforms: [],
+      blockchains: []
+    };
+  }
 }
 
 export async function getPlatforms() {
-  const platforms = await prisma.platform.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      assets: {
-        include: {
-          financialData: true
+  try {
+    const platforms = await prisma.platform.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        assets: {
+          include: {
+            financialData: true
+          }
         }
       }
-    }
-  });
-  const totalValue = platforms.reduce((sum, platform) => sum + toNumber(platform.totalTokenizedValue), 0);
-  return platforms.map((platform) => mapPlatform(platform, totalValue));
+    });
+    const totalValue = platforms.reduce((sum, platform) => sum + toNumber(platform.totalTokenizedValue), 0);
+    return platforms.map((platform) => mapPlatform(platform, totalValue));
+  } catch (error) {
+    logDataError("getPlatforms", error);
+    return [];
+  }
 }
 
 export async function getPlatformBySlug(slug: string) {
@@ -354,28 +397,33 @@ export async function getPlatformBySlug(slug: string) {
 }
 
 export async function getDataSources() {
-  const sources = await prisma.dataSource.findMany({
-    where: { assetId: null },
-    orderBy: [{ active: "desc" }, { name: "asc" }]
-  });
-  return sources.map((source) => ({
-    id: source.id,
-    name: source.name,
-    slug: source.slug ?? source.id,
-    sourceType: source.sourceType,
-    website: source.website ?? "",
-    apiUrl: source.apiUrl ?? "",
-    trustLevel: source.trustLevel ?? "Unrated",
-    updateFrequency: source.updateFrequency ?? "Manual",
-    active: source.active,
-    primaryAssetTypes: parseList(source.primaryAssetTypes),
-    supportedBlockchains: parseList(source.supportedBlockchains),
-    updateSchedule: source.updateSchedule ?? "Manual review",
-    reliability: source.reliability,
-    lastChecked: toDateString(source.lastChecked),
-    lastSync: toDateString(source.lastSync),
-    notes: source.notes ?? ""
-  })) satisfies LiveDataSource[];
+  try {
+    const sources = await prisma.dataSource.findMany({
+      where: { assetId: null },
+      orderBy: [{ active: "desc" }, { name: "asc" }]
+    });
+    return sources.map((source) => ({
+      id: source.id,
+      name: source.name,
+      slug: source.slug ?? source.id,
+      sourceType: source.sourceType,
+      website: source.website ?? "",
+      apiUrl: source.apiUrl ?? "",
+      trustLevel: source.trustLevel ?? "Unrated",
+      updateFrequency: source.updateFrequency ?? "Manual",
+      active: source.active,
+      primaryAssetTypes: parseList(source.primaryAssetTypes),
+      supportedBlockchains: parseList(source.supportedBlockchains),
+      updateSchedule: source.updateSchedule ?? "Manual review",
+      reliability: source.reliability,
+      lastChecked: toDateString(source.lastChecked),
+      lastSync: toDateString(source.lastSync),
+      notes: source.notes ?? ""
+    })) satisfies LiveDataSource[];
+  } catch (error) {
+    logDataError("getDataSources", error);
+    return [];
+  }
 }
 
 export async function getDashboardData() {
@@ -427,11 +475,15 @@ export async function getDashboardData() {
 }
 
 export async function getDataReadiness() {
-  const [assets, sources, jobs] = await Promise.all([
-    getAssets(),
-    getDataSources(),
-    prisma.syncJob.findMany({ orderBy: { startedAt: "desc" }, take: 8 })
-  ]);
+  const [assets, sources] = await Promise.all([getAssets(), getDataSources()]);
+  let jobs: Awaited<ReturnType<typeof prisma.syncJob.findMany>> = [];
+  let databaseError: string | null = null;
+  try {
+    jobs = await prisma.syncJob.findMany({ orderBy: { startedAt: "desc" }, take: 8 });
+  } catch (error) {
+    databaseError = dataErrorMessage(error);
+    logDataError("getDataReadiness.syncJobs", error);
+  }
   const databaseUrl = process.env.DATABASE_URL ?? "";
   const missingApiSources = sources.filter((source) => source.active && !source.apiUrl);
   const inactiveSources = sources.filter((source) => !source.active);
@@ -446,6 +498,8 @@ export async function getDataReadiness() {
 
   return {
     blockers: [
+      databaseError ? `Database read failed: ${databaseError}` : null,
+      !databaseUrl ? "DATABASE_URL is missing. Configure a persistent production database." : null,
       databaseUrl.startsWith("file:") ? "Production writes need a hosted persistent database; Vercel serverless file storage is not durable." : null,
       missingKeys.length ? `Missing environment variables: ${missingKeys.join(", ")}` : null
     ].filter(Boolean) as string[],

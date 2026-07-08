@@ -261,22 +261,25 @@ async function saveRwaRecord(record: RawRecord, dataSourceId: string) {
 }
 
 export async function syncRwaXyz() {
-  const source = await prisma.dataSource.findFirst({
-    where: {
-      slug: "rwa-xyz"
-    }
-  });
-  const apiUrl = source?.apiUrl || "https://api.rwa.xyz/v4/assets";
-  const job = await prisma.syncJob.create({
-    data: {
-      connectorId: "rwa-xyz",
-      sourceName: "RWA.xyz",
-      status: "RUNNING",
-      errors: JSON.stringify([])
-    }
-  });
+  let jobId: string | null = null;
 
   try {
+    const source = await prisma.dataSource.findFirst({
+      where: {
+        slug: "rwa-xyz"
+      }
+    });
+    const apiUrl = source?.apiUrl || "https://api.rwa.xyz/v4/assets";
+    const job = await prisma.syncJob.create({
+      data: {
+        connectorId: "rwa-xyz",
+        sourceName: "RWA.xyz",
+        status: "RUNNING",
+        errors: JSON.stringify([])
+      }
+    });
+    jobId = job.id;
+
     if (!process.env.RWA_API_KEY) {
       throw new Error("RWA_API_KEY is required for RWA.xyz live ingestion.");
     }
@@ -302,7 +305,7 @@ export async function syncRwaXyz() {
     }
 
     await prisma.syncJob.update({
-      where: { id: job.id },
+      where: { id: jobId },
       data: {
         status: "SUCCESS",
         finishedAt: new Date(),
@@ -315,14 +318,20 @@ export async function syncRwaXyz() {
     return { connectorId: "rwa-xyz", status: "SUCCESS", recordsFetched: records.length, recordsSaved: saved };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown sync error";
-    await prisma.syncJob.update({
-      where: { id: job.id },
-      data: {
-        status: "FAILED",
-        finishedAt: new Date(),
-        errors: JSON.stringify([message])
+    if (jobId) {
+      try {
+        await prisma.syncJob.update({
+          where: { id: jobId },
+          data: {
+            status: "FAILED",
+            finishedAt: new Date(),
+            errors: JSON.stringify([message])
+          }
+        });
+      } catch (updateError) {
+        console.error("[RAIL sync] Failed to update sync job", updateError);
       }
-    });
+    }
     return { connectorId: "rwa-xyz", status: "FAILED", recordsFetched: 0, recordsSaved: 0, error: message };
   }
 }

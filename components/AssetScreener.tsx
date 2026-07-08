@@ -151,6 +151,14 @@ export function AssetScreener({
           {filtered.map((asset) => (
             <AssetCard key={asset.id} asset={asset} />
           ))}
+          {filtered.length === 0 && (
+            <div className="rail-card rounded-lg p-6 md:col-span-2 xl:col-span-3">
+              <h3 className="font-semibold text-white">No assets available</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                RAIL could not load asset records from the database. Check `/admin/data-readiness` and confirm `DATABASE_URL`, seeded tables, and live source credentials are configured.
+              </p>
+            </div>
+          )}
         </div>
       </section>
     </div>
