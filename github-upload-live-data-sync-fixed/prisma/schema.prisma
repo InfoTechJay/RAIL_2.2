@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id                  String           @id @default(cuid())
+  name                String
+  slug                String           @unique
+  categoryId          String
+  category            Category         @relation(fields: [categoryId], references: [id])
+  platformId          String
+  platform            Platform         @relation(fields: [platformId], references: [id])
+  description         String
+  location            String?
+  jurisdiction        String?
+  assetType           String
+  blockchainId        String?
+  blockchain          Blockchain?      @relation(fields: [blockchainId], references: [id])
+  tokenSymbol         String?
+  contractAddress     String?
+  offeringSize        Float?
+  minimumInvestment   Float?
+  expectedYield       Float?
+  historicalYield     Float?
+  status              AssetStatus
+  investorEligibility InvestorEligibility
+  liquidityRating     LiquidityRating
+  riskScore           Int
+  sentimentScore      Int
+  transparencyScore   Int
+  liquidityScore      Int              @default(0)
+  dataConfidenceScore Int              @default(0)
+  confidenceLevel     String?
+  confidenceReasons   String?
+  lastVerified        DateTime?
+  officialSources     String?
+  supportingSources   String?
+  blockchainVerification String?
+  platformVerification   String?
+  regulatoryInformation  String?
+  launchDate          DateTime?
+  lastUpdated         DateTime         @updatedAt
+  token               Token?
+  financialData       FinancialData?
+  riskScores          RiskScore[]
+  sentimentScores     SentimentScore[]
+  distributions       Distribution[]
+  newsMentions        NewsMention[]
+  dataSources         DataSource[]
+  scoreExplanations   ScoreExplanation[]
+  watchlists          Watchlist[]
+  userNotes           UserNote[]
+  createdAt           DateTime         @default(now())
+
+  @@index([categoryId])
+  @@index([platformId])
+  @@index([status])
+  @@index([riskScore])
+}
+
+model Platform {
+  id                       String   @id @default(cuid())
+  name                     String   @unique
+  slug                     String   @unique
+  logo                     String?
+  website                  String?
+  description              String?
+  headquarters             String?
+  yearFounded              Int?
+  regulatoryInformation    String?
+  supportedBlockchains     String?
+  assetCategories          String?
+  assetsUnderManagement    Float?
+  numberOfListedAssets     Int      @default(0)
+  totalTokenizedValue      Float?
+  averageRiskScore         Int      @default(0)
+  averageTransparencyScore Int      @default(0)
+  averageLiquidityScore    Int      @default(0)
+  averageSentimentScore    Int      @default(0)
+  newsFeed                 String?
+  lastUpdated              DateTime?
+  assets                   Asset[]
+  dataSources              DataSource[]
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  assets      Asset[]
+}
+
+model Blockchain {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  symbol      String?
+  description String?
+  assets      Asset[]
+  tokens      Token[]
+}
+
+model Token {
+  id              String      @id @default(cuid())
+  assetId         String      @unique
+  asset           Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  blockchainId    String?
+  blockchain      Blockchain? @relation(fields: [blockchainId], references: [id])
+  symbol          String
+  contractAddress String?
+  tokenStandard   String?
+  totalSupply     Float?
+  decimals        Int?
+  transferability String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model FinancialData {
+  id                 String   @id @default(cuid())
+  assetId            String   @unique
+  asset              Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  disclosedAssetValue Float?
+  offeringSize       Float?
+  minimumInvestment  Float?
+  expectedYield      Float?
+  historicalYield    Float?
+  distributionRate   Float?
+  valuationDate      DateTime?
+  updatedAt          DateTime @updatedAt
+}
+
+model RiskScore {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  score           Int
+  liquidityRisk   Int
+  marketRisk      Int
+  issuerRisk      Int
+  regulatoryRisk  Int
+  methodology     String
+  notes           String?
+  assessedAt      DateTime @default(now())
+}
+
+model SentimentScore {
+  id            String   @id @default(cuid())
+  assetId       String
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  score         Int
+  sourceCount   Int
+  trend         SentimentTrend
+  summary       String
+  calculatedAt  DateTime @default(now())
+}
+
+model Distribution {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  amount      Float
+  currency    String   @default("USD")
+  periodStart DateTime
+  periodEnd   DateTime
+  paidAt      DateTime?
+  notes       String?
+}
+
+model NewsMention {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  title       String
+  publisher   String
+  url         String?
+  sentiment   Int
+  publishedAt DateTime
+}
+
+model DataSource {
+  id                    String    @id @default(cuid())
+  assetId               String?
+  asset                 Asset?    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  platformId            String?
+  platform              Platform? @relation(fields: [platformId], references: [id], onDelete: SetNull)
+  name                  String
+  slug                  String?   @unique
+  sourceType            String
+  website               String?
+  apiUrl                String?
+  url                   String?
+  trustLevel            String?
+  updateFrequency       String?
+  active                Boolean   @default(true)
+  primaryAssetTypes     String?
+  supportedBlockchains  String?
+  updateSchedule        String?
+  reliability           Int
+  lastChecked           DateTime  @default(now())
+  lastSync              DateTime?
+  notes                 String?
+}
+
+model ScoreExplanation {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  scoreType   String
+  value       Int
+  rating      String
+  explanation String
+  factors     String?
+  calculatedAt DateTime @default(now())
+
+  @@index([assetId])
+  @@index([scoreType])
+}
+
+model SyncJob {
+  id          String   @id @default(cuid())
+  connectorId String
+  sourceName  String
+  status      String
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  recordsFetched Int    @default(0)
+  recordsSaved   Int    @default(0)
+  errors      String?
+  logs        SyncLog[]
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  syncJobId String
+  syncJob   SyncJob  @relation(fields: [syncJobId], references: [id], onDelete: Cascade)
+  level     String
+  message   String
+  context   String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  before    String?
+  after     String?
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String?
+  role      UserRole    @default(USER)
+  watchlist Watchlist[]
+  notes     UserNote[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Watchlist {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  alertOnUpdates  Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, assetId])
+}
+
+model UserNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AssetStatus {
+  ACTIVE
+  FUNDING
+  CLOSED
+  PAUSED
+  MATURED
+}
+
+enum InvestorEligibility {
+  RETAIL
+  ACCREDITED
+  QUALIFIED_PURCHASER
+  INSTITUTIONAL
+}
+
+enum LiquidityRating {
+  LOW
+  MODERATE
+  HIGH
+  LOCKED
+}
+
+enum SentimentTrend {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  MIXED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
