@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -23,10 +23,10 @@ model Asset {
   blockchain          Blockchain?      @relation(fields: [blockchainId], references: [id])
   tokenSymbol         String?
   contractAddress     String?
-  offeringSize        Decimal?         @db.Decimal(18, 2)
-  minimumInvestment   Decimal?         @db.Decimal(18, 2)
-  expectedYield       Decimal?         @db.Decimal(6, 2)
-  historicalYield     Decimal?         @db.Decimal(6, 2)
+  offeringSize        Float?
+  minimumInvestment   Float?
+  expectedYield       Float?
+  historicalYield     Float?
   status              AssetStatus
   investorEligibility InvestorEligibility
   liquidityRating     LiquidityRating
@@ -36,10 +36,10 @@ model Asset {
   liquidityScore      Int              @default(0)
   dataConfidenceScore Int              @default(0)
   confidenceLevel     String?
-  confidenceReasons   String[]         @default([])
+  confidenceReasons   String?
   lastVerified        DateTime?
-  officialSources     String[]         @default([])
-  supportingSources   String[]         @default([])
+  officialSources     String?
+  supportingSources   String?
   blockchainVerification String?
   platformVerification   String?
   regulatoryInformation  String?
@@ -73,16 +73,16 @@ model Platform {
   headquarters             String?
   yearFounded              Int?
   regulatoryInformation    String?
-  supportedBlockchains     String[] @default([])
-  assetCategories          String[] @default([])
-  assetsUnderManagement    Decimal? @db.Decimal(18, 2)
+  supportedBlockchains     String?
+  assetCategories          String?
+  assetsUnderManagement    Float?
   numberOfListedAssets     Int      @default(0)
-  totalTokenizedValue      Decimal? @db.Decimal(18, 2)
+  totalTokenizedValue      Float?
   averageRiskScore         Int      @default(0)
   averageTransparencyScore Int      @default(0)
   averageLiquidityScore    Int      @default(0)
   averageSentimentScore    Int      @default(0)
-  newsFeed                 String[] @default([])
+  newsFeed                 String?
   lastUpdated              DateTime?
   assets                   Asset[]
   dataSources              DataSource[]
@@ -116,7 +116,7 @@ model Token {
   symbol          String
   contractAddress String?
   tokenStandard   String?
-  totalSupply     Decimal?    @db.Decimal(30, 8)
+  totalSupply     Float?
   decimals        Int?
   transferability String?
   createdAt       DateTime    @default(now())
@@ -127,12 +127,12 @@ model FinancialData {
   id                 String   @id @default(cuid())
   assetId            String   @unique
   asset              Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  disclosedAssetValue Decimal? @db.Decimal(18, 2)
-  offeringSize       Decimal? @db.Decimal(18, 2)
-  minimumInvestment  Decimal? @db.Decimal(18, 2)
-  expectedYield      Decimal? @db.Decimal(6, 2)
-  historicalYield    Decimal? @db.Decimal(6, 2)
-  distributionRate   Decimal? @db.Decimal(6, 2)
+  disclosedAssetValue Float?
+  offeringSize       Float?
+  minimumInvestment  Float?
+  expectedYield      Float?
+  historicalYield    Float?
+  distributionRate   Float?
   valuationDate      DateTime?
   updatedAt          DateTime @updatedAt
 }
@@ -166,7 +166,7 @@ model Distribution {
   id          String   @id @default(cuid())
   assetId     String
   asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  amount      Decimal  @db.Decimal(18, 2)
+  amount      Float
   currency    String   @default("USD")
   periodStart DateTime
   periodEnd   DateTime
@@ -200,8 +200,8 @@ model DataSource {
   trustLevel            String?
   updateFrequency       String?
   active                Boolean   @default(true)
-  primaryAssetTypes     String[]  @default([])
-  supportedBlockchains  String[]  @default([])
+  primaryAssetTypes     String?
+  supportedBlockchains  String?
   updateSchedule        String?
   reliability           Int
   lastChecked           DateTime  @default(now())
@@ -217,7 +217,7 @@ model ScoreExplanation {
   value       Int
   rating      String
   explanation String
-  factors     String[] @default([])
+  factors     String?
   calculatedAt DateTime @default(now())
 
   @@index([assetId])
@@ -233,7 +233,7 @@ model SyncJob {
   finishedAt  DateTime?
   recordsFetched Int    @default(0)
   recordsSaved   Int    @default(0)
-  errors      String[] @default([])
+  errors      String?
   logs        SyncLog[]
 }
 
@@ -243,7 +243,7 @@ model SyncLog {
   syncJob   SyncJob  @relation(fields: [syncJobId], references: [id], onDelete: Cascade)
   level     String
   message   String
-  context   Json?
+  context   String?
   createdAt DateTime @default(now())
 }
 
@@ -253,8 +253,8 @@ model AuditLog {
   action    String
   entity    String
   entityId  String?
-  before    Json?
-  after     Json?
+  before    String?
+  after     String?
   createdAt DateTime @default(now())
 }
 

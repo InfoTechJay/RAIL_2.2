@@ -8,9 +8,12 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "next lint",
+    "sqlite": ".\\tools\\sqlite\\sqlite3.exe prisma/dev.db",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma:push": "powershell -ExecutionPolicy Bypass -File scripts/setup-sqlite.ps1 -SkipSeed",
+    "prisma:seed": "prisma db seed",
+    "db:reset": "powershell -ExecutionPolicy Bypass -File scripts/setup-sqlite.ps1"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",

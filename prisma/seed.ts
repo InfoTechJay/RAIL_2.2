@@ -25,6 +25,10 @@ function platformNameForSource(sourceName: string) {
   return aliases[sourceName] ?? sourceName;
 }
 
+function serialize(value: unknown) {
+  return JSON.stringify(value);
+}
+
 async function main() {
   const categoryRecords = new Map<string, string>();
   const platformRecords = new Map<string, string>();
@@ -73,8 +77,8 @@ async function main() {
         headquarters: profile?.headquarters,
         yearFounded: profile?.yearFounded,
         regulatoryInformation: profile?.regulatoryInformation,
-        supportedBlockchains: profile?.supportedBlockchains ?? [],
-        assetCategories: profile?.assetCategories ?? [],
+        supportedBlockchains: serialize(profile?.supportedBlockchains ?? []),
+        assetCategories: serialize(profile?.assetCategories ?? []),
         assetsUnderManagement: profile?.assetsUnderManagement,
         numberOfListedAssets: profile?.listedAssets ?? 0,
         totalTokenizedValue: profile?.totalTokenizedValue,
@@ -82,7 +86,7 @@ async function main() {
         averageTransparencyScore: profile?.averageTransparencyScore ?? 0,
         averageLiquidityScore: profile?.averageLiquidityScore ?? 0,
         averageSentimentScore: profile?.averageSentimentScore ?? 0,
-        newsFeed: profile?.recentNews ?? [],
+        newsFeed: serialize(profile?.recentNews ?? []),
         lastUpdated: profile?.lastUpdated ? new Date(profile.lastUpdated) : null
       },
       create: {
@@ -94,8 +98,8 @@ async function main() {
         headquarters: profile?.headquarters,
         yearFounded: profile?.yearFounded,
         regulatoryInformation: profile?.regulatoryInformation,
-        supportedBlockchains: profile?.supportedBlockchains ?? [],
-        assetCategories: profile?.assetCategories ?? [],
+        supportedBlockchains: serialize(profile?.supportedBlockchains ?? []),
+        assetCategories: serialize(profile?.assetCategories ?? []),
         assetsUnderManagement: profile?.assetsUnderManagement,
         numberOfListedAssets: profile?.listedAssets ?? 0,
         totalTokenizedValue: profile?.totalTokenizedValue,
@@ -103,7 +107,7 @@ async function main() {
         averageTransparencyScore: profile?.averageTransparencyScore ?? 0,
         averageLiquidityScore: profile?.averageLiquidityScore ?? 0,
         averageSentimentScore: profile?.averageSentimentScore ?? 0,
-        newsFeed: profile?.recentNews ?? [],
+        newsFeed: serialize(profile?.recentNews ?? []),
         lastUpdated: profile?.lastUpdated ? new Date(profile.lastUpdated) : null
       }
     });
@@ -123,8 +127,8 @@ async function main() {
         trustLevel: source.trustLevel,
         updateFrequency: source.updateFrequency,
         active: source.active,
-        primaryAssetTypes: source.primaryAssetTypes,
-        supportedBlockchains: source.supportedBlockchains,
+        primaryAssetTypes: serialize(source.primaryAssetTypes),
+        supportedBlockchains: serialize(source.supportedBlockchains),
         updateSchedule: source.updateSchedule,
         reliability: reliabilityForTrust(source.trustLevel),
         lastChecked: new Date(source.lastSync),
@@ -141,8 +145,8 @@ async function main() {
         trustLevel: source.trustLevel,
         updateFrequency: source.updateFrequency,
         active: source.active,
-        primaryAssetTypes: source.primaryAssetTypes,
-        supportedBlockchains: source.supportedBlockchains,
+        primaryAssetTypes: serialize(source.primaryAssetTypes),
+        supportedBlockchains: serialize(source.supportedBlockchains),
         updateSchedule: source.updateSchedule,
         reliability: reliabilityForTrust(source.trustLevel),
         lastChecked: new Date(source.lastSync),
@@ -175,10 +179,10 @@ async function main() {
         liquidityScore: liquidity.value,
         dataConfidenceScore: confidence.value,
         confidenceLevel: confidence.rating,
-        confidenceReasons: confidence.factors,
+        confidenceReasons: serialize(confidence.factors),
         lastVerified: new Date(confidence.lastVerified),
-        officialSources: confidence.officialSources,
-        supportingSources: confidence.supportingSources,
+        officialSources: serialize(confidence.officialSources),
+        supportingSources: serialize(confidence.supportingSources),
         blockchainVerification: asset.contractAddress
           ? `${asset.blockchain} contract reference available: ${asset.contractAddress}`
           : "Blockchain contract reference pending",
@@ -211,10 +215,10 @@ async function main() {
         liquidityScore: liquidity.value,
         dataConfidenceScore: confidence.value,
         confidenceLevel: confidence.rating,
-        confidenceReasons: confidence.factors,
+        confidenceReasons: serialize(confidence.factors),
         lastVerified: new Date(confidence.lastVerified),
-        officialSources: confidence.officialSources,
-        supportingSources: confidence.supportingSources,
+        officialSources: serialize(confidence.officialSources),
+        supportingSources: serialize(confidence.supportingSources),
         blockchainVerification: asset.contractAddress
           ? `${asset.blockchain} contract reference available: ${asset.contractAddress}`
           : "Blockchain contract reference pending",
@@ -287,25 +291,29 @@ async function main() {
             value: score.value,
             rating: score.rating,
             explanation: score.explanation,
-            factors: score.factors,
+            factors: serialize(score.factors),
             calculatedAt: new Date(asset.lastUpdated)
           }))
         }
       }
     });
 
-    await prisma.distribution.createMany({
-      data: [
-        {
-          assetId: createdAsset.id,
-          amount: Math.round(asset.disclosedAssetValue * (asset.expectedYield / 100) / 4),
-          periodStart: new Date("2026-01-01"),
-          periodEnd: new Date("2026-03-31"),
-          paidAt: new Date("2026-04-15"),
-          notes: "Sample quarterly distribution"
-        }
-      ],
-      skipDuplicates: true
+    await prisma.distribution.deleteMany({
+      where: {
+        assetId: createdAsset.id,
+        notes: "Sample quarterly distribution"
+      }
+    });
+
+    await prisma.distribution.create({
+      data: {
+        assetId: createdAsset.id,
+        amount: Math.round(asset.disclosedAssetValue * (asset.expectedYield / 100) / 4),
+        periodStart: new Date("2026-01-01"),
+        periodEnd: new Date("2026-03-31"),
+        paidAt: new Date("2026-04-15"),
+        notes: "Sample quarterly distribution"
+      }
     });
   }
 
