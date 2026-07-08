@@ -1,7 +1,7 @@
 import { BookOpen, Clock } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SectionHeader } from "@/components/SectionHeader";
-import { educationArticles } from "@/lib/mock-data";
+import { educationArticles } from "@/lib/education-content";
 
 export default function EducationPage() {
   return (

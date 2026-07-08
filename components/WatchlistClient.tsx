@@ -2,14 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { Bell, BookmarkPlus, LockKeyhole, Trash2 } from "lucide-react";
-import { assets } from "@/lib/mock-data";
+import type { LiveAsset } from "@/lib/live-data";
 import { formatDate, formatPercent } from "@/lib/format";
 
-export function WatchlistClient() {
-  const [savedIds, setSavedIds] = useState<string[]>([assets[0].id, assets[4].id]);
+export function WatchlistClient({ assets }: { assets: LiveAsset[] }) {
+  const initialSavedIds = assets.slice(0, 2).map((asset) => asset.id);
+  const [savedIds, setSavedIds] = useState<string[]>(initialSavedIds);
   const [notes, setNotes] = useState<Record<string, string>>({
-    [assets[0].id]: "Review occupancy and refinancing notes after next quarterly update.",
-    [assets[4].id]: "Track delinquency commentary and servicer transparency."
+    [initialSavedIds[0] ?? ""]: "Review source updates and verification notes after the next sync.",
+    [initialSavedIds[1] ?? ""]: "Track confidence score changes and new data-source coverage."
   });
 
   const savedAssets = useMemo(() => assets.filter((asset) => savedIds.includes(asset.id)), [savedIds]);
@@ -62,7 +63,7 @@ export function WatchlistClient() {
             <h2 className="font-semibold text-white">Authentication Placeholder</h2>
           </div>
           <p className="mt-3 text-sm leading-6 text-zinc-400">
-            This MVP uses local mock state. Future user accounts will persist saved assets, personal notes, and update alerts through authenticated
+            This account preview uses browser state. Future user accounts will persist saved assets, personal notes, and update alerts through authenticated
             database records.
           </p>
         </section>

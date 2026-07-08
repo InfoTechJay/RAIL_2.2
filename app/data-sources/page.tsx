@@ -2,10 +2,13 @@ import { DatabaseZap, ShieldCheck } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SectionHeader } from "@/components/SectionHeader";
 import { StatCard } from "@/components/StatCard";
-import { dataSources } from "@/lib/data-source-registry";
+import { getDataReadiness, getDataSources } from "@/lib/live-data";
 import { formatDate } from "@/lib/format";
 
-export default function DataSourcesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DataSourcesPage() {
+  const [dataSources, readiness] = await Promise.all([getDataSources(), getDataReadiness()]);
   const active = dataSources.filter((source) => source.active).length;
   const highTrust = dataSources.filter((source) => source.trustLevel === "High").length;
 
@@ -21,8 +24,24 @@ export default function DataSourcesPage() {
         <StatCard label="Registered sources" value={`${dataSources.length}`} detail="Seeded registry entries" icon={<DatabaseZap className="h-4 w-4" />} />
         <StatCard label="Active sources" value={`${active}`} detail="Enabled for future sync jobs" icon={<ShieldCheck className="h-4 w-4" />} />
         <StatCard label="High trust" value={`${highTrust}`} detail="Official or authoritative sources" />
-        <StatCard label="Connector status" value="Ready" detail="Framework implemented, live APIs pending" />
+        <StatCard label="Connector status" value={readiness.blockers.length ? "Needs setup" : "Ready"} detail="Live sync readiness" />
       </div>
+
+      {(readiness.blockers.length > 0 || readiness.sourceGaps.missingApiSources.length > 0) && (
+        <section className="rail-card mt-6 rounded-lg p-5">
+          <h2 className="font-semibold text-white">Data Readiness</h2>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {readiness.blockers.map((blocker) => (
+              <p key={blocker} className="rounded-md border border-railGold/20 bg-railGold/10 p-3 text-sm leading-6 text-railGoldSoft">
+                {blocker}
+              </p>
+            ))}
+            <p className="rounded-md border border-white/10 bg-ink/40 p-3 text-sm leading-6 text-zinc-300">
+              {readiness.sourceGaps.missingApiSources.length} active sources need API URLs before automated ingestion can pull from them.
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="rail-card mt-6 rounded-lg p-5">
         <div className="overflow-x-auto">
@@ -35,6 +54,7 @@ export default function DataSourcesPage() {
                 <th className="border-b border-white/10 px-3 py-3">Frequency</th>
                 <th className="border-b border-white/10 px-3 py-3">Asset types</th>
                 <th className="border-b border-white/10 px-3 py-3">Chains</th>
+                <th className="border-b border-white/10 px-3 py-3">API</th>
                 <th className="border-b border-white/10 px-3 py-3">Last sync</th>
               </tr>
             </thead>
@@ -52,6 +72,7 @@ export default function DataSourcesPage() {
                   <td className="border-b border-white/5 px-3 py-4">{source.updateFrequency}</td>
                   <td className="border-b border-white/5 px-3 py-4">{source.primaryAssetTypes.join(", ")}</td>
                   <td className="border-b border-white/5 px-3 py-4">{source.supportedBlockchains.join(", ")}</td>
+                  <td className="border-b border-white/5 px-3 py-4">{source.apiUrl ? "Configured" : "Missing"}</td>
                   <td className="border-b border-white/5 px-3 py-4">{formatDate(source.lastSync)}</td>
                 </tr>
               ))}

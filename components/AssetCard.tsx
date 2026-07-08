@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ArrowUpRight, MapPin } from "lucide-react";
-import type { RailAsset } from "@/lib/mock-data";
+import type { LiveAsset } from "@/lib/live-data";
 import { formatDate, formatPercent, scoreTone } from "@/lib/format";
 
-export function AssetCard({ asset }: { asset: RailAsset }) {
+export function AssetCard({ asset }: { asset: LiveAsset }) {
   return (
     <article className="rail-card flex h-full flex-col rounded-lg p-5 transition hover:border-railGold/35">
       <div className="flex items-start justify-between gap-4">

@@ -1,4 +1,25 @@
-import type { RailAsset } from "./mock-data";
+type ScoringAsset = {
+  riskScore: number;
+  sentimentScore: number;
+  transparencyScore: number;
+  liquidityRating: string;
+  transferability: string;
+  contractAddress: string | null;
+  description: string;
+  expectedYield: number | null;
+  lastUpdated: string;
+  riskFactors: string[];
+  documents: string[];
+  dataSources: {
+    name: string;
+    type: string;
+  }[];
+  newsMentions: {
+    publisher: string;
+    title: string;
+  }[];
+  sentimentSummary: string;
+};
 
 export type ScoreExplanation = {
   value: number;
@@ -15,7 +36,7 @@ export function ratingForScore(value: number, inverse = false): ScoreExplanation
   return "Low";
 }
 
-export function explainRiskScore(asset: RailAsset): ScoreExplanation {
+export function explainRiskScore(asset: ScoringAsset): ScoreExplanation {
   return {
     value: asset.riskScore,
     rating: ratingForScore(asset.riskScore),
@@ -24,7 +45,7 @@ export function explainRiskScore(asset: RailAsset): ScoreExplanation {
   };
 }
 
-export function explainTransparencyScore(asset: RailAsset): ScoreExplanation {
+export function explainTransparencyScore(asset: ScoringAsset): ScoreExplanation {
   const factors = [
     `${asset.dataSources.length} listed data sources`,
     `${asset.documents.length} supporting documents`,
@@ -38,7 +59,7 @@ export function explainTransparencyScore(asset: RailAsset): ScoreExplanation {
   };
 }
 
-export function explainLiquidityScore(asset: RailAsset): ScoreExplanation {
+export function explainLiquidityScore(asset: ScoringAsset): ScoreExplanation {
   const liquidityValue = asset.liquidityRating === "HIGH" ? 82 : asset.liquidityRating === "MODERATE" ? 58 : asset.liquidityRating === "LOW" ? 34 : 18;
   return {
     value: liquidityValue,
@@ -48,7 +69,7 @@ export function explainLiquidityScore(asset: RailAsset): ScoreExplanation {
   };
 }
 
-export function explainSentimentScore(asset: RailAsset): ScoreExplanation {
+export function explainSentimentScore(asset: ScoringAsset): ScoreExplanation {
   return {
     value: asset.sentimentScore,
     rating: ratingForScore(asset.sentimentScore),
@@ -57,7 +78,7 @@ export function explainSentimentScore(asset: RailAsset): ScoreExplanation {
   };
 }
 
-export function calculateDataConfidence(asset: RailAsset): ScoreExplanation & { lastVerified: string; officialSources: string[]; supportingSources: string[] } {
+export function calculateDataConfidence(asset: ScoringAsset): ScoreExplanation & { lastVerified: string; officialSources: string[]; supportingSources: string[] } {
   const officialSources = asset.dataSources.filter((source) => /issuer|platform|trustee|servicer/i.test(source.type)).map((source) => source.name);
   const supportingSources = asset.dataSources.filter((source) => !officialSources.includes(source.name)).map((source) => source.name);
   const sourceScore = Math.min(30, asset.dataSources.length * 10);

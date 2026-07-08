@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { AssetCard } from "@/components/AssetCard";
-import { assets, blockchains, categories, platforms, type InvestorEligibility, type LiquidityRating } from "@/lib/mock-data";
+import type { InvestorEligibility, LiquidityRating, LiveAsset } from "@/lib/live-data";
 
 const riskOptions = [
   { label: "Any risk", value: "any" },
@@ -12,7 +12,17 @@ const riskOptions = [
   { label: "High", value: "76-100" }
 ];
 
-export function AssetScreener() {
+export function AssetScreener({
+  assets,
+  categories,
+  platforms,
+  blockchains
+}: {
+  assets: LiveAsset[];
+  categories: string[];
+  platforms: string[];
+  blockchains: string[];
+}) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [platform, setPlatform] = useState("all");

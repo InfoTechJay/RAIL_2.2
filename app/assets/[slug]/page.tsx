@@ -3,28 +3,36 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { StatCard } from "@/components/StatCard";
-import { assets, getAssetBySlug } from "@/lib/mock-data";
+import { getAssetBySlug } from "@/lib/live-data";
 import { formatCurrency, formatDate, formatPercent, scoreTone } from "@/lib/format";
-import { calculateDataConfidence, explainLiquidityScore, explainRiskScore, explainSentimentScore, explainTransparencyScore } from "@/lib/scoring";
 
-export function generateStaticParams() {
-  return assets.map((asset) => ({ slug: asset.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function AssetDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const asset = getAssetBySlug(slug);
+  const asset = await getAssetBySlug(slug);
 
   if (!asset) notFound();
 
-  const confidence = calculateDataConfidence(asset);
-  const scoreExplanations = [
-    ["RAIL Risk Score", explainRiskScore(asset)],
-    ["RAIL Transparency Score", explainTransparencyScore(asset)],
-    ["RAIL Liquidity Score", explainLiquidityScore(asset)],
-    ["RAIL Sentiment Score", explainSentimentScore(asset)],
-    ["RAIL Data Confidence Score", confidence]
-  ] as const;
+  const scoreExplanations =
+    asset.scoreExplanations.length > 0
+      ? asset.scoreExplanations
+      : [
+          {
+            scoreType: "RAIL Risk Score",
+            value: asset.riskScore,
+            rating: "Pending",
+            explanation: "Risk scoring is pending source verification.",
+            factors: asset.riskFactors
+          },
+          {
+            scoreType: "RAIL Data Confidence Score",
+            value: asset.dataConfidenceScore,
+            rating: asset.confidenceLevel,
+            explanation: "Data confidence is based on source coverage, freshness, and verification status.",
+            factors: asset.confidenceReasons
+          }
+        ];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -116,11 +124,11 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
 
           <DetailSection title="RAIL Scoring">
             <div className="grid gap-3 md:grid-cols-2">
-              {scoreExplanations.map(([title, score]) => (
-                <div key={title} className="rounded-md border border-white/10 bg-ink/40 p-4">
+              {scoreExplanations.map((score) => (
+                <div key={score.scoreType} className="rounded-md border border-white/10 bg-ink/40 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-white">{title}</p>
+                      <p className="font-semibold text-white">{score.scoreType}</p>
                       <p className="mt-1 text-sm text-zinc-400">{score.explanation}</p>
                     </div>
                     <span className="rounded-md border border-railGold/25 bg-railGold/10 px-2.5 py-1 text-sm font-semibold text-railGold">
@@ -179,16 +187,16 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ sl
             <div className="space-y-3">
               <div className="rounded-md border border-railGold/20 bg-railGold/10 p-4">
                 <p className="text-sm font-semibold text-railGoldSoft">
-                  Data Confidence {confidence.value} - {confidence.rating}
+                  Data Confidence {asset.dataConfidenceScore} - {asset.confidenceLevel}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-zinc-300">{confidence.explanation}</p>
-                <p className="mt-2 text-xs text-zinc-500">Last verified {formatDate(confidence.lastVerified)}</p>
+                <p className="mt-2 text-sm leading-6 text-zinc-300">Confidence reflects source count, official verification, chain references, and data freshness.</p>
+                <p className="mt-2 text-xs text-zinc-500">Last verified {formatDate(asset.lastVerified)}</p>
               </div>
-              <TrustRow label="Official Sources" value={confidence.officialSources.length ? confidence.officialSources.join(", ") : "No official source identified yet"} />
-              <TrustRow label="Supporting Sources" value={confidence.supportingSources.length ? confidence.supportingSources.join(", ") : "Supporting source review pending"} />
-              <TrustRow label="Blockchain Verification" value={asset.contractAddress ? `${asset.blockchain} contract reference available: ${asset.contractAddress}` : "Blockchain contract reference pending"} />
-              <TrustRow label="Platform Verification" value={`${asset.platform} disclosure review required before production confidence approval`} />
-              <TrustRow label="Regulatory Information" value={`${asset.jurisdiction} regulatory context should be verified against official filings and issuer documents`} />
+              <TrustRow label="Official Sources" value={asset.officialSources.length ? asset.officialSources.join(", ") : "No official source identified yet"} />
+              <TrustRow label="Supporting Sources" value={asset.supportingSources.length ? asset.supportingSources.join(", ") : "Supporting source review pending"} />
+              <TrustRow label="Blockchain Verification" value={asset.blockchainVerification} />
+              <TrustRow label="Platform Verification" value={asset.platformVerification} />
+              <TrustRow label="Regulatory Information" value={asset.regulatoryInformation} />
             </div>
           </DetailSection>
 

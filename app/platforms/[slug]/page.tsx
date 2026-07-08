@@ -3,16 +3,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { StatCard } from "@/components/StatCard";
-import { getPlatformBySlug, platformProfiles } from "@/lib/platform-data";
+import { getPlatformBySlug } from "@/lib/live-data";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-export function generateStaticParams() {
-  return platformProfiles.map((platform) => ({ slug: platform.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function PlatformDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const platform = getPlatformBySlug(slug);
+  const platform = await getPlatformBySlug(slug);
 
   if (!platform) notFound();
 
@@ -37,7 +35,7 @@ export default async function PlatformDetailPage({ params }: { params: Promise<{
           <div className="grid gap-3 sm:grid-cols-2">
             <StatCard label="Listed assets" value={`${platform.listedAssets}`} detail="Reported/estimated coverage" />
             <StatCard label="Tokenized value" value={formatCurrency(platform.totalTokenizedValue, true)} detail="Platform-level estimate" />
-            <StatCard label="Average risk" value={`${platform.averageRiskScore}`} detail="Explainable placeholder score" />
+            <StatCard label="Average risk" value={`${platform.averageRiskScore}`} detail="Explainable score" />
             <StatCard label="Transparency" value={`${platform.averageTransparencyScore}`} detail="Disclosure and source quality" />
           </div>
         </div>
@@ -50,7 +48,7 @@ export default async function PlatformDetailPage({ params }: { params: Promise<{
               items={[
                 ["Headquarters", platform.headquarters],
                 ["Year founded", platform.yearFounded ? `${platform.yearFounded}` : "Not available"],
-                ["Market share", `${platform.marketShare.toFixed(1)}% of tracked sample`],
+                ["Market share", `${platform.marketShare.toFixed(1)}% of tracked database value`],
                 ["Last updated", formatDate(platform.lastUpdated)]
               ]}
             />

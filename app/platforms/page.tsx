@@ -3,11 +3,19 @@ import { ArrowUpRight, Building2, Globe2, Layers3, ShieldCheck } from "lucide-re
 import { Disclaimer } from "@/components/Disclaimer";
 import { SectionHeader } from "@/components/SectionHeader";
 import { StatCard } from "@/components/StatCard";
-import { platformMetrics, platformProfiles } from "@/lib/platform-data";
+import { getPlatforms } from "@/lib/live-data";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-export default function PlatformsPage() {
-  const metrics = platformMetrics();
+export const dynamic = "force-dynamic";
+
+export default async function PlatformsPage() {
+  const platforms = await getPlatforms();
+  const metrics = {
+    totalPlatforms: platforms.length,
+    totalTokenizedValue: platforms.reduce((sum, platform) => sum + platform.totalTokenizedValue, 0),
+    averageRisk: platforms.length ? Math.round(platforms.reduce((sum, platform) => sum + platform.averageRiskScore, 0) / platforms.length) : 0,
+    averageTransparency: platforms.length ? Math.round(platforms.reduce((sum, platform) => sum + platform.averageTransparencyScore, 0) / platforms.length) : 0
+  };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -20,12 +28,12 @@ export default function PlatformsPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Tracked platforms" value={`${metrics.totalPlatforms}`} detail="Issuer and marketplace profiles" icon={<Building2 className="h-4 w-4" />} />
         <StatCard label="Tracked value" value={formatCurrency(metrics.totalTokenizedValue, true)} detail="Reported and estimated coverage" icon={<Globe2 className="h-4 w-4" />} />
-        <StatCard label="Avg risk" value={`${metrics.averageRisk}`} detail="Platform-level placeholder score" icon={<ShieldCheck className="h-4 w-4" />} />
+        <StatCard label="Avg risk" value={`${metrics.averageRisk}`} detail="Platform-level score" icon={<ShieldCheck className="h-4 w-4" />} />
         <StatCard label="Avg transparency" value={`${metrics.averageTransparency}`} detail="Disclosure and source quality" icon={<Layers3 className="h-4 w-4" />} />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        {platformProfiles.map((platform) => (
+        {platforms.map((platform) => (
           <article key={platform.slug} className="rail-card rounded-lg p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex gap-4">

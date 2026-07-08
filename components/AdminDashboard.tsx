@@ -3,33 +3,12 @@
 import { useMemo, useState } from "react";
 import { Activity, CheckCircle2, Clock3, DatabaseZap, Edit3, FileCheck2, Layers3, Plus, RotateCw, Save, ShieldAlert, Trash2, X } from "lucide-react";
 import { connectorRegistry } from "@/lib/ingestion/connectors";
-import { dataSources } from "@/lib/data-source-registry";
-import { assets as seedAssets, categories, platforms, type RailAsset } from "@/lib/mock-data";
-import { platformProfiles } from "@/lib/platform-data";
+import type { AssetStatus, LiveAsset, LiveDataSource } from "@/lib/live-data";
 
 type EditableAsset = Pick<
-  RailAsset,
+  LiveAsset,
   "id" | "name" | "category" | "platform" | "riskScore" | "sentimentScore" | "expectedYield" | "status" | "location"
 >;
-
-const emptyAsset: EditableAsset = {
-  id: "",
-  name: "",
-  category: categories[0],
-  platform: platforms[0],
-  riskScore: 50,
-  sentimentScore: 50,
-  expectedYield: 0,
-  status: "FUNDING",
-  location: ""
-};
-
-const adminWorkflows = [
-  { label: "Manage Platforms", detail: `${platformProfiles.length} intelligence profiles`, icon: Layers3 },
-  { label: "Manage Categories", detail: `${categories.length} asset classes`, icon: FileCheck2 },
-  { label: "Manage Data Sources", detail: `${dataSources.length} registry sources`, icon: DatabaseZap },
-  { label: "Trigger Sync Jobs", detail: `${connectorRegistry.length} connector shells`, icon: RotateCw }
-];
 
 const pendingApprovals = [
   "Review source confidence changes before publishing",
@@ -49,9 +28,36 @@ const auditLogs = [
   "Admin role gate pending authentication provider"
 ];
 
-export function AdminDashboard() {
+export function AdminDashboard({
+  assets,
+  categories,
+  platforms,
+  dataSources
+}: {
+  assets: LiveAsset[];
+  categories: string[];
+  platforms: string[];
+  dataSources: LiveDataSource[];
+}) {
+  const emptyAsset: EditableAsset = {
+    id: "",
+    name: "",
+    category: categories[0] ?? "Other Real World Assets",
+    platform: platforms[0] ?? "Unassigned Platform",
+    riskScore: 50,
+    sentimentScore: 50,
+    expectedYield: 0,
+    status: "FUNDING",
+    location: ""
+  };
+  const adminWorkflows = [
+    { label: "Manage Platforms", detail: `${platforms.length} intelligence profiles`, icon: Layers3 },
+    { label: "Manage Categories", detail: `${categories.length} asset classes`, icon: FileCheck2 },
+    { label: "Manage Data Sources", detail: `${dataSources.length} registry sources`, icon: DatabaseZap },
+    { label: "Trigger Sync Jobs", detail: `${connectorRegistry.length} connector shells`, icon: RotateCw }
+  ];
   const [records, setRecords] = useState<EditableAsset[]>(
-    seedAssets.map(({ id, name, category, platform, riskScore, sentimentScore, expectedYield, status, location }) => ({
+    assets.map(({ id, name, category, platform, riskScore, sentimentScore, expectedYield, status, location }) => ({
       id,
       name,
       category,
@@ -184,7 +190,7 @@ export function AdminDashboard() {
                 </AdminField>
               </div>
               <AdminField label="Status">
-                <select value={editing.status} onChange={(event) => setEditing({ ...editing, status: event.target.value as EditableAsset["status"] })} className="input">
+                <select value={editing.status} onChange={(event) => setEditing({ ...editing, status: event.target.value as AssetStatus })} className="input">
                   <option value="ACTIVE">Active</option>
                   <option value="FUNDING">Funding</option>
                   <option value="CLOSED">Closed</option>
@@ -231,7 +237,7 @@ export function AdminDashboard() {
             <div className="mt-4 grid gap-2">
               <WorkflowItem label="Active sources" detail={`${dataSources.filter((source) => source.active).length} enabled`} icon={<CheckCircle2 className="h-4 w-4" aria-hidden />} />
               <WorkflowItem label="Failed imports" detail="No failures in mock queue" icon={<ShieldAlert className="h-4 w-4" aria-hidden />} />
-              <WorkflowItem label="Sync history" detail={`${syncHistory.length} sample jobs`} icon={<Clock3 className="h-4 w-4" aria-hidden />} />
+              <WorkflowItem label="Sync history" detail={`${syncHistory.length} tracked jobs`} icon={<Clock3 className="h-4 w-4" aria-hidden />} />
             </div>
           </section>
         </aside>

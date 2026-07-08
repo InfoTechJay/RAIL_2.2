@@ -54,11 +54,16 @@ const dataSourceSeeds: DataSourceSeed[] = [
   ["Blockworks", "News", "https://blockworks.co", "Medium", ["News"], ["N/A"], "Daily"]
 ];
 
+const apiUrls: Record<string, string> = {
+  "rwa-xyz": "https://api.rwa.xyz/v4/assets"
+};
+
 export const dataSources: DataSourceRecord[] = dataSourceSeeds.map(([name, sourceType, website, trustLevel, primaryAssetTypes, supportedBlockchains, updateFrequency]) => ({
   name,
   slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
   sourceType,
   website,
+  apiUrl: apiUrls[name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")],
   trustLevel,
   updateFrequency,
   active: true,

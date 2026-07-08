@@ -3,7 +3,7 @@ import { Bell, BookOpen, ChartNoAxesCombined, Database, FileSearch, LockKeyhole,
 import { ButtonLink } from "@/components/ButtonLink";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SectionHeader } from "@/components/SectionHeader";
-import { categories } from "@/lib/mock-data";
+import { getScreenerOptions } from "@/lib/live-data";
 
 const unlockItems = [
   {
@@ -31,7 +31,11 @@ const workflow = [
   { label: "Monitor", icon: <Bell className="h-5 w-5" aria-hidden />, detail: "Prepare daily or weekly refreshes for account-based alerts and tracking." }
 ];
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const { categories } = await getScreenerOptions();
+
   return (
     <main>
       <section className="relative overflow-hidden border-b border-white/10">
